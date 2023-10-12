@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-class Author < ApplicationRecord
+class Book < ApplicationRecord
   validates_presence_of :name, :synopsis, :release_date, :edition, :price
 end

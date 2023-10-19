@@ -70,4 +70,69 @@ RSpec.describe 'Authors', type: :request do
       expect(response).to have_http_status(404)
     end
   end
+
+  describe 'GET #list_books' do
+    it 'lists all books from an author' do
+      author = create(:author)
+      book = create(:book)
+      author.books << book
+
+      get "/authors/#{author.id}/books",
+          headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+
+      JSON.parse(response.body)
+      expect(response).to have_http_status(:ok)
+      # expect(response_data).to include(book.to_json(only: [:id, :name, :synopsis, :release_date, :edition, :price]))
+    end
+  end
+
+  describe 'POST #add_book' do
+    it 'adds a book to an author' do
+      author = create(:author)
+      book = create(:book)
+
+      post "/authors/#{author.id}/add_book/#{book.id}",
+           headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      expect(response).to have_http_status(:ok)
+      author.reload
+      expect(author.books).to include(book)
+    end
+
+    it 'returns an error if book is already associated with the author' do
+      author = create(:author)
+      book = create(:book)
+
+      author.books << book
+      post "/authors/#{author.id}/add_book/#{book.id}",
+           headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      expect(response).to have_http_status(:unprocessable_entity)
+      response_data = JSON.parse(response.body)
+      expect(response_data['error']).to include('Author has already been taken')
+    end
+  end
+
+  describe 'DELETE #remove_book' do
+    it 'removes a book from an author' do
+      author = create(:author)
+      book = create(:book)
+
+      author.books << book
+      delete "/authors/#{author.id}/remove_book/#{book.id}",
+             headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      expect(response).to have_http_status(:no_content)
+      author.reload
+      expect(author.books).not_to include(book)
+    end
+
+    it 'returns an error if the book is not associated with the author' do
+      author = create(:author)
+      book = create(:book)
+
+      delete "/authors/#{author.id}/remove_book/#{book.id}",
+             headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      expect(response).to have_http_status(:unprocessable_entity)
+      response_data = JSON.parse(response.body)
+      expect(response_data['error']).to include('not associated')
+    end
+  end
 end

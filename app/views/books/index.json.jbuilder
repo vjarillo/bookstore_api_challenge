@@ -1,3 +1,3 @@
 # frozen_string_literal: true
 
-json.array! books, partial: 'book', as: :book
+json.array! books, partial: 'books/book', as: :book

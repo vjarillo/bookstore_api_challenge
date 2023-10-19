@@ -29,7 +29,7 @@ describe 'RequestThrottle Middleware' do
     expect(parsed_response['message']).to eq('Rate Limit Exceded')
   end
 
-  it 'resets the rate limit after 5 minutes' do
+  it 'resets the rate limit after 50 seconds' do
     21.times do
       get '/home', {}, 'REMOTE_ADDR' => '192.168.1.1'
     end

@@ -1,13 +1,18 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'devise/jwt/test_helpers'
 
 RSpec.describe 'Authors', type: :request do
+  let!(:user) { create(:user) }
+  let(:headers) { { 'Accept' => 'application/json', 'Content-Type' => 'application/json' } }
+  let(:auth_headers) { Devise::JWT::TestHelpers.auth_headers(headers, user) }
+
   describe 'GET /authors' do
     it 'returns a list of authors' do
       create_list(:author, 3)
 
-      get '/authors', headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      get '/authors', headers: headers
       expect(response).to have_http_status(200)
       # expect(response).to match_response_schema("authors")
     end
@@ -17,12 +22,12 @@ RSpec.describe 'Authors', type: :request do
     it 'returns a specific author' do
       author = create(:author)
 
-      get "/authors/#{author.id}", headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      get "/authors/#{author.id}", headers: headers
       expect(response).to have_http_status(200)
     end
 
     it 'returns a 404 status if the author is not found' do
-      get '/authors/999', headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      get '/authors/999', headers: headers
       expect(response).to have_http_status(404)
     end
   end
@@ -31,8 +36,7 @@ RSpec.describe 'Authors', type: :request do
     it 'creates a new author' do
       author_params = { first_name: 'Sample author', last_name: 'John Doe', date_of_birth: '1999-02-21' }
 
-      post '/authors', params: { author: author_params }.to_json,
-                       headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      post '/authors', params: { author: author_params }.to_json, headers: auth_headers
       expect(response).to have_http_status(201)
     end
   end
@@ -42,16 +46,14 @@ RSpec.describe 'Authors', type: :request do
       author = create(:author)
       updated_params = { first_name: 'David' }
 
-      put "/authors/#{author.id}", params: { author: updated_params }.to_json,
-                                   headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      put "/authors/#{author.id}", params: { author: updated_params }.to_json, headers: auth_headers
       expect(response).to have_http_status(200)
       author.reload
       expect(author.first_name).to eq('David')
     end
 
     it 'returns a 404 status if the author is not found' do
-      put '/authors/999', params: { author: { title: 'Updated Title' } }.to_json,
-                          headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      put '/authors/999', params: { author: { title: 'Updated Title' } }.to_json, headers: auth_headers
       expect(response).to have_http_status(404)
     end
   end
@@ -60,13 +62,13 @@ RSpec.describe 'Authors', type: :request do
     it 'deletes a author' do
       author = create(:author)
 
-      delete "/authors/#{author.id}", headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      delete "/authors/#{author.id}", headers: auth_headers
       expect(response).to have_http_status(204)
       expect { author.reload }.to raise_error(ActiveRecord::RecordNotFound)
     end
 
     it 'returns a 404 status if the author is not found' do
-      delete '/authors/999', headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      delete '/authors/999', headers: auth_headers
       expect(response).to have_http_status(404)
     end
   end
@@ -77,8 +79,7 @@ RSpec.describe 'Authors', type: :request do
       book = create(:book)
       author.books << book
 
-      get "/authors/#{author.id}/books",
-          headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      get "/authors/#{author.id}/books", headers: headers
 
       JSON.parse(response.body)
       expect(response).to have_http_status(:ok)
@@ -91,8 +92,7 @@ RSpec.describe 'Authors', type: :request do
       author = create(:author)
       book = create(:book)
 
-      post "/authors/#{author.id}/add_book/#{book.id}",
-           headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      post "/authors/#{author.id}/add_book/#{book.id}", headers: auth_headers
       expect(response).to have_http_status(:ok)
       author.reload
       expect(author.books).to include(book)
@@ -103,8 +103,7 @@ RSpec.describe 'Authors', type: :request do
       book = create(:book)
 
       author.books << book
-      post "/authors/#{author.id}/add_book/#{book.id}",
-           headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      post "/authors/#{author.id}/add_book/#{book.id}", headers: auth_headers
       expect(response).to have_http_status(:unprocessable_entity)
       response_data = JSON.parse(response.body)
       expect(response_data['error']).to include('Author has already been taken')
@@ -117,8 +116,7 @@ RSpec.describe 'Authors', type: :request do
       book = create(:book)
 
       author.books << book
-      delete "/authors/#{author.id}/remove_book/#{book.id}",
-             headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      delete "/authors/#{author.id}/remove_book/#{book.id}", headers: auth_headers
       expect(response).to have_http_status(:no_content)
       author.reload
       expect(author.books).not_to include(book)
@@ -128,8 +126,7 @@ RSpec.describe 'Authors', type: :request do
       author = create(:author)
       book = create(:book)
 
-      delete "/authors/#{author.id}/remove_book/#{book.id}",
-             headers: { 'Accept' => 'application/json', 'Content-Type' => 'application/json' }
+      delete "/authors/#{author.id}/remove_book/#{book.id}", headers: auth_headers
       expect(response).to have_http_status(:unprocessable_entity)
       response_data = JSON.parse(response.body)
       expect(response_data['error']).to include('not associated')

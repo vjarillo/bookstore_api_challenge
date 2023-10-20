@@ -11,4 +11,11 @@ Rails.application.routes.draw do
   resources :books
 
   get '/home', to: ->(_env) { [200, { 'Content-Type' => 'application/json' }, [{ message: 'Home Page!' }.to_json]] }
+
+  devise_for :users, skip: %i[registrations sessions passwords],defaults: { format: :json }
+  devise_scope :user do
+    post '/signup', to: 'registrations#create'
+    post '/login', to: 'sessions#create'
+    delete '/logout', to: 'sessions#destroy'
+  end
 end

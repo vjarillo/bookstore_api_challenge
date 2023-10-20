@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class AuthorsController < ApplicationController
+  before_action :authenticate_user!, except: %i[index show list_books find_author]
   before_action :find_author, only: %i[show update destroy list_books add_book remove_book]
   before_action :find_book, only: %i[add_book remove_book remove_book]
 

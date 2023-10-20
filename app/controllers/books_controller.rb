@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class BooksController < ApplicationController
+  before_action :authenticate_user!, except: %i[index show find_book]
   before_action :find_book, only: %i[show update destroy]
 
   def index
